@@ -1,4 +1,5 @@
 import 'package:lms_layered_architecture_example/model/course.dart';
+import 'package:lms_layered_architecture_example/model/course_result.dart';
 
 import '../model/student.dart';
 
@@ -7,11 +8,14 @@ class LmsSystem {
   final List<Course> courses = [];
  
   void addCourse({required String courseId, required courseName }) {
+    if (_findCourseOrNull(courseId) != null) {
+      throw Exception("course $courseId is already exist.");
+    }
     courses.add(Course(id: courseId, name: courseName));
   }
 
   void removeCourse({required String courseId}) {
-    courses.remove(courseId);
+    courses.removeWhere((c) => c.id == courseId);
   }
 
   void enrollStudentToCourse({required String studentId, required String courseId}) {
@@ -54,6 +58,27 @@ class LmsSystem {
  
   }
 
+  String addResult({
+    required String studentId,
+    required String courseId,
+    required int score,
+  }) {
+    final student = _findStudentOrNull(studentId);
+    if (student == null) {
+      throw Exception('Student $studentId does not exist');
+    }
+    final course = _findCourseOrNull(courseId);
+    if (course == null) {
+      throw Exception('Course $courseId does not exist');
+    }
+    if (!course.studentIds.contains(studentId)) {
+      throw Exception('Student $studentId is not enrolled in $courseId');
+    }
+    if (score < 0 || score > 100) {
+      throw Exception('Score must be between 0 and 100');
+    };studentId: studentId, courseId: courseId, score: score));
+    return id;
+  }
 
   // void removeStudentFromCourse
 
