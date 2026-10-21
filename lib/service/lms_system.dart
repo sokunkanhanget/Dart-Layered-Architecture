@@ -1,11 +1,11 @@
 import 'package:lms_layered_architecture_example/model/course.dart';
 import 'package:lms_layered_architecture_example/model/course_result.dart';
-
 import '../model/student.dart';
 
 class LmsSystem {
   final List<Student> students = [];
   final List<Course> courses = [];
+  final List<CourseResult> results =[];
  
   void addCourse({required String courseId, required courseName }) {
     if (_findCourseOrNull(courseId) != null) {
@@ -15,59 +15,69 @@ class LmsSystem {
   }
 
   void removeCourse({required String courseId}) {
+    Course? course = _findCourseOrNull(courseId);
+    if (course == null) {
+      throw Exception('Course does not exist');
+    }
+    if (course.studentIds.isNotEmpty) {
+      throw Exception('Cannot remove a course with students');
+    }
+    for (CourseResult r in results) {
+      if (r.courseId == courseId) {
+        throw Exception('Cannot remove a course with results');
+      }
+    }
     courses.removeWhere((c) => c.id == courseId);
   }
 
   void enrollStudentToCourse({required String studentId, required String courseId}) {
     Student? student = _findStudentOrNull(studentId);
+    Course? course = _findCourseOrNull(courseId);
 
-    if (student != null) {
-      for ( Course c in courses) { 
-        if (c.id == courseId && c.studentIds == studentId ) {
-          throw Exception("The student is already in this course.");
-        } else {
-          c.studentIds.add(studentId);
-        }
-      }
-    } else {
-      throw Exception("Student $studentId does not exists.");
+    if (student == null) {
+      throw Exception('Student does not exist');
     }
+
+    if (course == null) {
+      throw Exception('Course does not exist');
+    }
+
+    if (course.studentIds.contains(studentId)) {
+      throw Exception('Student is already enrolled');
+    }
+    course.studentIds.add(studentId);
+
   }
 
   void discardStudentFromCourse ({required String studentId, required String courseId}) {
     Course? course = _findCourseOrNull(courseId);
     Student? student = _findStudentOrNull(studentId);
 
-    if ( course != null && student != null) {
-      for ( Course c in courses) {
-        if ( c.id == courseId && c.studentIds == studentId ) {
-          c.studentIds.remove(studentId);
-          
-        } else {
-          throw Exception("The student $studentId is not in the course ${c.name}");
-        }
-      }
-    } else if (course == null && student != null) {
-      throw Exception("The course does not exist.");
-    } else if (course != null && student == null) {
-      throw Exception("The student does not exist.");
-    } else {
-      throw Exception("The course and student do not exist.");
+    if (student == null) {
+      throw Exception('Student does not exist');
     }
-    
- 
+
+    if (course == null) {
+      throw Exception('Course does not exist');
+    }
+
+    if (!course.studentIds.contains(studentId)) {
+      throw Exception('Student is not enrolled');
+    }
+    course.studentIds.remove(studentId);
+    results.removeWhere(
+      (r) => r.studentId == studentId && r.courseId == courseId,
+    );
   }
 
-  String addResult({
-    required String studentId,
-    required String courseId,
-    required int score,
-  }) {
-    final student = _findStudentOrNull(studentId);
+  void addResult({required String studentId, required String courseId, required int score,}) {
+    Student? student = _findStudentOrNull(studentId);
+    Course? course = _findCourseOrNull(courseId);
+
     if (student == null) {
       throw Exception('Student $studentId does not exist');
     }
-    final course = _findCourseOrNull(courseId);
+
     if (course == null) {
       throw Exception('Course $courseId does not exist');
     }
@@ -76,11 +86,38 @@ class LmsSystem {
     }
     if (score < 0 || score > 100) {
       throw Exception('Score must be between 0 and 100');
-    };studentId: studentId, courseId: courseId, score: score));
-    return id;
+    }
+
+    for (CourseResult r in results) {
+      if (r.studentId == studentId && r.courseId == courseId) {
+        throw Exception('Result already exists');
+      }
+    }
+
+    results.add(CourseResult(
+      id: '${studentId}_$courseId',
+      studentId: studentId,
+      courseId: courseId,
+      score: score,
+    ));
+
   }
 
   // void removeStudentFromCourse
+  void removeResult({required String resultId}) {
+    bool exists = false;
+    for (CourseResult r in results) {
+      if (r.id == resultId) {
+        exists = true;
+      }
+    }
+
+    if (!exists) {
+      throw Exception('Result does not exist');
+    }
+
+    results.removeWhere((r) => r.id == resultId);
+  }
 
   void addStudent({required String studentId, required String studentName}) {
     // ! Student shall not exist already
@@ -120,5 +157,5 @@ class LmsSystem {
     return null;
   }
 
-
 }
+

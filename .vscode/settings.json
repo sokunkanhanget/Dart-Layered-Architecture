@@ -3,7 +3,7 @@
   // AI DISABLE SETTINGS
   // =========================================================
 
-  "chat.disableAIFeatures": false,
+  "chat.disableAIFeatures": true,
   
 
   // Absolutely no AI inline suggestions
